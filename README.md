@@ -12,11 +12,13 @@ For each search query, the parser:
 ## Features
 
 - **High answer rate** (~100%) — reads answers immediately after each click
+- **Interactive mode** — prompts for queries, language, and region when run without arguments
 - **Language & region support** — `--hl` and `--gl` flags for any Google locale
+- **Auto captcha solving** — optional API integration (2Captcha, rucaptcha, CapGuru)
 - **Headless mode** — run without browser window
 - **Checkpoint & resume** — auto-saves progress every 5 queries; resume after crash/captcha with `--resume`
 - **Deduplication** — skips duplicate questions across queries
-- **Captcha detection** — pauses and waits for manual resolution (in non-headless mode)
+- **Captcha detection** — auto-solve via API, or pause for manual resolution
 - **Cross-platform** — works on macOS, Windows, and Linux
 
 ## Requirements
@@ -35,58 +37,63 @@ pip install -r requirements.txt
 
 ## Usage
 
-### Basic
+### Interactive mode (no arguments needed)
 
 ```bash
-# Create a queries file (one query per line)
-cp queries_example.txt queries.txt
-# Edit queries.txt with your queries
-
-# Run
 python google_paa_parser.py
 ```
 
-### Options
+The script will prompt you for:
+1. **Queries** — paste them one per line, or enter a path to a file
+2. **Language & region** — choose from presets (ru, en, de, fr, ...) or enter custom `hl=xx gl=yy`
+
+### CLI mode
 
 ```bash
 # Custom input/output files
 python google_paa_parser.py -i my_queries.txt -o my_results.xlsx
 
 # Russian Google
-python google_paa_parser.py --hl ru --gl ru
+python google_paa_parser.py -i queries.txt --hl ru --gl ru
 
 # English (US)
-python google_paa_parser.py --hl en --gl us
+python google_paa_parser.py -i queries.txt --hl en --gl us
 
 # More questions per query (default: 15)
-python google_paa_parser.py --clicks 20
+python google_paa_parser.py -i queries.txt --clicks 20
 
 # Headless mode (no browser window, faster)
-python google_paa_parser.py --headless
+python google_paa_parser.py -i queries.txt --headless
 
-# Faster (shorter pauses, higher captcha risk)
-python google_paa_parser.py --pause-min 5 --pause-max 10
+# Auto-solve captchas via 2Captcha API
+python google_paa_parser.py -i queries.txt --captcha-key YOUR_API_KEY
+
+# Auto-solve via rucaptcha or CapGuru
+python google_paa_parser.py -i queries.txt --captcha-key KEY --captcha-service rucaptcha
+python google_paa_parser.py -i queries.txt --captcha-key KEY --captcha-service capguru
 
 # Resume after crash or captcha
 python google_paa_parser.py --resume
 
 # Combine options
-python google_paa_parser.py --hl ru --gl ru --clicks 20 --headless -o results_ru.xlsx
+python google_paa_parser.py -i queries.txt --hl ru --gl ru --clicks 20 --headless --captcha-key KEY
 ```
 
 ### All flags
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `-i`, `--input` | `queries.txt` | Input file (one query per line) |
+| `-i`, `--input` | *(interactive)* | Input file (one query per line) |
 | `-o`, `--output` | `results.xlsx` | Output file (.xlsx or .json) |
-| `--hl` | `en` | Google interface language |
-| `--gl` | `us` | Google country/region |
+| `--hl` | *(interactive / en)* | Google interface language |
+| `--gl` | *(interactive / us)* | Google country/region |
 | `--clicks` | `15` | Max questions to expand per query |
 | `--headless` | off | Run without browser window |
 | `--resume` | off | Continue from last checkpoint |
 | `--pause-min` | `10` | Min pause between queries (seconds) |
 | `--pause-max` | `20` | Max pause between queries (seconds) |
+| `--captcha-key` | *(none)* | API key for captcha solving (or env `CAPTCHA_API_KEY`) |
+| `--captcha-service` | `2captcha` | Captcha service: `2captcha`, `rucaptcha`, or `capguru` |
 
 ## Output format
 
@@ -123,9 +130,15 @@ Key implementation detail: answers are read **immediately after each click**. Go
 Google may show a captcha after many queries from the same IP. The parser:
 
 1. Detects captcha automatically
-2. In non-headless mode: pauses and waits up to 5 minutes for you to solve it manually
-3. After 3 consecutive captchas: saves checkpoint and stops
-4. Use `--resume` to continue after solving captcha or changing IP
+2. **With `--captcha-key`**: sends reCAPTCHA to solving API, injects token, continues automatically
+3. **Without API key**: pauses and waits up to 5 minutes for manual resolution (non-headless mode)
+4. After 3 consecutive captchas: saves checkpoint and stops
+5. Use `--resume` to continue after solving captcha or changing IP
+
+Supported captcha services (all use the same 2captcha-compatible protocol):
+- [2captcha.com](https://2captcha.com) — international
+- [rucaptcha.com](https://rucaptcha.com) — Russian interface
+- [cap.guru](https://cap.guru) — budget option
 
 Tips to avoid captchas:
 - Keep default pauses (10-20s between queries)
@@ -142,13 +155,15 @@ Tips to avoid captchas:
 ## Changelog (v1 → v2)
 
 | What | v1 | v2 |
-|------|----|----|
+|------|----|-----|
 | Answer extraction | Batch at the end (**~31% answers**) | After each click (**~100% answers**) |
 | Browser sessions | New Chrome per query (+10s overhead) | Single session, reused across all queries |
 | Language/region | None (depends on IP) | `--hl` / `--gl` flags |
+| Interactive mode | No | Prompts for queries, language, region |
+| Captcha solving | Silent crash | Auto-solve via API + manual fallback |
 | File paths | Hardcoded `C:\py-projects\...` (Windows-only) | `pathlib` — cross-platform |
 | Crash recovery | None (all data lost) | Checkpoint every 5 queries + `--resume` |
-| Captcha | Silent crash | Detection + wait for manual solve + auto-stop after 3 |
+| Captcha | Silent crash | Detection + API solve + manual + auto-stop after 3 |
 | Headless | No | `--headless` flag |
 | Deduplication | No (same question repeated across queries) | By question text |
 | Output | XLSX only | XLSX + JSON (always both) |
