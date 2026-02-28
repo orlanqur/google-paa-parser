@@ -154,24 +154,27 @@ Tips to avoid captchas:
 
 ## Changelog (v1 → v2)
 
-| What | v1 | v2 |
-|------|----|-----|
-| Answer extraction | Batch at the end (**~31% answers**) | After each click (**~100% answers**) |
-| Browser sessions | New Chrome per query (+10s overhead) | Single session, reused across all queries |
-| Language/region | None (depends on IP) | `--hl` / `--gl` flags |
-| Interactive mode | No | Prompts for queries, language, region |
-| Captcha solving | Silent crash | Auto-solve via API + manual fallback |
-| File paths | Hardcoded `C:\py-projects\...` (Windows-only) | `pathlib` — cross-platform |
-| Crash recovery | None (all data lost) | Checkpoint every 5 queries + `--resume` |
-| Captcha | Silent crash | Detection + API solve + manual + auto-stop after 3 |
-| Headless | No | `--headless` flag |
-| Deduplication | No (same question repeated across queries) | By question text |
-| Output | XLSX only | XLSX + JSON (always both) |
-| CLI args | None (edit source code) | `argparse` with all options |
-| Logging | `print()` | `logging` with timestamps |
-| Pause control | Hardcoded 15-25s | `--pause-min` / `--pause-max` |
-| Cookie consent | Single hardcoded selector | Multiple fallback selectors |
-| PAA detection | Single selector | Primary + 2 fallback selectors |
+| # | What | v1 (original) | v2 (rewrite) |
+|---|------|---------------|--------------|
+| 1 | **Answer extraction** | Batch at the end — **~31% answers** | After each click — **~100% answers** |
+| 2 | **Browser sessions** | New Chrome per query (+10s overhead) | Single session, reused across all queries |
+| 3 | **Language/region** | None (depends on IP) | `--hl` / `--gl` flags for any Google locale |
+| 4 | **Interactive mode** | None | Prompts for queries + language + region at startup |
+| 5 | **Captcha handling** | Silent crash | Auto-solve via API (2captcha/rucaptcha/capguru) + manual fallback + auto-stop after 3 |
+| 6 | **Crash recovery** | None (all data lost) | Checkpoint every 5 queries + `--resume` |
+| 7 | **Headless mode** | None | `--headless` flag |
+| 8 | **Deduplication** | Same question repeated across queries | Skips duplicates by question text |
+| 9 | **Output format** | XLSX only | XLSX + JSON (always both) |
+| 10 | **CLI arguments** | None (edit source code) | Full `argparse` with all options |
+| 11 | **Logging** | `print()` | `logging` with timestamps |
+| 12 | **Pause control** | Hardcoded 15-25s | `--pause-min` / `--pause-max` |
+| 13 | **File paths** | Hardcoded `C:\py-projects\...` (Windows-only) | `pathlib` — cross-platform (macOS/Win/Linux) |
+| 14 | **Cookie consent** | Single hardcoded selector | Multiple fallback selectors |
+| 15 | **PAA detection** | Single CSS selector | Primary + 2 fallback selectors |
+
+### Summary
+
+The original script collected answers for only **31% of questions** (batch extraction at the end, after Google collapsed them). The rewrite reads each answer **immediately after click**, achieving **~100% answer rate**. Added interactive startup, auto-captcha solving, crash recovery, deduplication, headless mode, and cross-platform support — turning a fragile Windows-only script into a production-ready CLI tool.
 
 ## License
 
