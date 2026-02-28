@@ -139,6 +139,25 @@ Tips to avoid captchas:
 - No proxy support (yet) — use VPN for IP rotation if needed
 - Answers may include "AI Overview" content from Google's AI features
 
+## Changelog (v1 → v2)
+
+| What | v1 | v2 |
+|------|----|----|
+| Answer extraction | Batch at the end (**~31% answers**) | After each click (**~100% answers**) |
+| Browser sessions | New Chrome per query (+10s overhead) | Single session, reused across all queries |
+| Language/region | None (depends on IP) | `--hl` / `--gl` flags |
+| File paths | Hardcoded `C:\py-projects\...` (Windows-only) | `pathlib` — cross-platform |
+| Crash recovery | None (all data lost) | Checkpoint every 5 queries + `--resume` |
+| Captcha | Silent crash | Detection + wait for manual solve + auto-stop after 3 |
+| Headless | No | `--headless` flag |
+| Deduplication | No (same question repeated across queries) | By question text |
+| Output | XLSX only | XLSX + JSON (always both) |
+| CLI args | None (edit source code) | `argparse` with all options |
+| Logging | `print()` | `logging` with timestamps |
+| Pause control | Hardcoded 15-25s | `--pause-min` / `--pause-max` |
+| Cookie consent | Single hardcoded selector | Multiple fallback selectors |
+| PAA detection | Single selector | Primary + 2 fallback selectors |
+
 ## License
 
 MIT
