@@ -1,0 +1,4 @@
+# Example queries (one per line, lines starting with # are comments)
+what is machine learning
+best programming language 2025
+how to start a business

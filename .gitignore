@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.checkpoint.json
+results.xlsx
+results.json
+*.xlsx
+*.json
+!queries_example.txt
+.DS_Store
+Thumbs.db
